@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_quiz_168/services/supabase_services.dart';
 import 'package:flutter_quiz_168/models/supabase_class.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class BmrHomeUi extends StatefulWidget {
   const BmrHomeUi({super.key});
@@ -89,8 +90,13 @@ class _BmrHomeUiState extends State<BmrHomeUi> {
     }
   }
 
-  // ฟังก์ชันเปิดกล้อง
-  Future<void> pickImage() async {
+  Future<void> pickImage1() async {
+    if (kIsWeb) {
+      await showPopup("ฟีเจอร์เปิดกล้องใช้ได้เฉพาะ Android/iOS เท่านั้น");
+      return;
+    }
+
+    // Android/iOS
     var status = await Permission.camera.status;
     if (!status.isGranted) {
       status = await Permission.camera.request();
@@ -101,24 +107,48 @@ class _BmrHomeUiState extends State<BmrHomeUi> {
     }
 
     try {
-      final pickedFile = await ImagePicker().pickImage(
-        source: ImageSource.camera,
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 80,
-      );
-
+      final pickedFile =
+          await ImagePicker().pickImage(source: ImageSource.camera);
       if (pickedFile != null) {
         setState(() {
           _image = File(pickedFile.path);
         });
-      } else {
-        await showPopup("คุณยกเลิกการถ่ายรูป");
       }
     } catch (e) {
-      await showPopup("เกิดข้อผิดพลาด: $e");
+      await showPopup("เกิดข้อผิดพลาดในการเปิดกล้อง: $e");
     }
   }
+
+  // ฟังก์ชันเปิดกล้อง
+  // Future<void> pickImage() async {
+  //   var status = await Permission.camera.status;
+  //   if (!status.isGranted) {
+  //     status = await Permission.camera.request();
+  //     if (!status.isGranted) {
+  //       await showPopup("ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาต");
+  //       return;
+  //     }
+  //   }
+
+  //   try {
+  //     final pickedFile = await ImagePicker().pickImage(
+  //       source: ImageSource.camera,
+  //       maxWidth: 800,
+  //       maxHeight: 800,
+  //       imageQuality: 80,
+  //     );
+
+  //     if (pickedFile != null) {
+  //       setState(() {
+  //         _image = File(pickedFile.path);
+  //       });
+  //     } else {
+  //       await showPopup("คุณยกเลิกการถ่ายรูป");
+  //     }
+  //   } catch (e) {
+  //     await showPopup("เกิดข้อผิดพลาด: $e");
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +161,7 @@ class _BmrHomeUiState extends State<BmrHomeUi> {
         leading: IconButton(
           icon: Icon(Icons.camera_alt),
           color: Colors.white,
-          onPressed: pickImage,
+          onPressed: pickImage1,
         ),
       ),
       body: Padding(
