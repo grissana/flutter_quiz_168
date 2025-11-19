@@ -146,7 +146,11 @@ class _BmrHomeUiState extends State<BmrHomeUi> {
                   : Image.asset('assets/images/addbmr.jpg',
                       height: 200, width: double.infinity, fit: BoxFit.cover),
               const SizedBox(height: 30),
-
+              Text(
+                "กรอกข้อมูลเพื่อคำนวณค่า BMR",
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
               // เลือกเพศ
               Text("เลือกเพศ", style: TextStyle(fontSize: 16)),
               Row(
