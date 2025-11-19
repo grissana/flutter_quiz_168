@@ -1,10 +1,11 @@
 // ignore_for_file: non_constant_identifier_names
 
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_quiz_168/services/supabase_services.dart';
 import 'package:flutter_quiz_168/models/supabase_class.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 
 class BmrHomeUi extends StatefulWidget {
   const BmrHomeUi({super.key});
@@ -19,7 +20,6 @@ class _BmrHomeUiState extends State<BmrHomeUi> {
   final ageCtrl = TextEditingController();
 
   final service = Supabase_Services();
-
   File? _image; // เก็บรูปที่ถ่าย
   String? selectedSex;
 
@@ -46,7 +46,6 @@ class _BmrHomeUiState extends State<BmrHomeUi> {
     final double? height = double.tryParse(heightCtrl.text);
     final int? age = int.tryParse(ageCtrl.text);
 
-    // ตรวจสอบข้อมูลไม่ครบ
     if (weight == null ||
         height == null ||
         age == null ||
@@ -78,7 +77,6 @@ class _BmrHomeUiState extends State<BmrHomeUi> {
     if (success) {
       await showPopup(
           "บันทึกข้อมูลสำเร็จ\nค่า BMR: ${bmr_value.toStringAsFixed(2)} แคลอรี่/วัน");
-      // รีเซ็ตข้อมูล
       weightCtrl.clear();
       heightCtrl.clear();
       ageCtrl.clear();
@@ -93,12 +91,32 @@ class _BmrHomeUiState extends State<BmrHomeUi> {
 
   // ฟังก์ชันเปิดกล้อง
   Future<void> pickImage() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.camera);
-    if (pickedFile != null) {
-      setState(() {
-        _image = File(pickedFile.path);
-      });
+    var status = await Permission.camera.status;
+    if (!status.isGranted) {
+      status = await Permission.camera.request();
+      if (!status.isGranted) {
+        await showPopup("ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาต");
+        return;
+      }
+    }
+
+    try {
+      final pickedFile = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 80,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _image = File(pickedFile.path);
+        });
+      } else {
+        await showPopup("คุณยกเลิกการถ่ายรูป");
+      }
+    } catch (e) {
+      await showPopup("เกิดข้อผิดพลาด: $e");
     }
   }
 
@@ -110,12 +128,11 @@ class _BmrHomeUiState extends State<BmrHomeUi> {
         title: Text('BMR Application', style: TextStyle(color: Colors.white)),
         centerTitle: true,
         backgroundColor: Colors.pinkAccent,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.camera_alt),
-            onPressed: pickImage,
-          ),
-        ],
+        leading: IconButton(
+          icon: Icon(Icons.camera_alt),
+          color: Colors.white,
+          onPressed: pickImage,
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -156,8 +173,9 @@ class _BmrHomeUiState extends State<BmrHomeUi> {
                   Text("หญิง"),
                 ],
               ),
-
               const SizedBox(height: 20),
+
+              // ฟอร์มกรอกข้อมูล
               TextField(
                 controller: weightCtrl,
                 keyboardType: TextInputType.number,
